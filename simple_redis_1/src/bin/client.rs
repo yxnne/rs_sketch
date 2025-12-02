@@ -1,10 +1,7 @@
 use bytes::Bytes;
 use mini_redis::client;
-use tokio::sync::mpsc;
-use tokio::sync::oneshot;
+use tokio::sync::{mpsc, oneshot};
 
-/// 管理任务可以使用该发送端将命令执行的结果传回给发出命令的任务
-type Responder<T> = oneshot::Sender<mini_redis::Result<T>>;
 /// Multiple different commands are multiplexed over a single channel.
 #[derive(Debug)]
 enum Command {
@@ -19,12 +16,20 @@ enum Command {
     },
 }
 
+/// Provided by the requester and used by the manager task to send the command
+/// response back to the requester.
+type Responder<T> = oneshot::Sender<mini_redis::Result<T>>;
+
 #[tokio::main]
 async fn main() {
+    // tx transmitter / rx receiver
     let (tx, mut rx) = mpsc::channel(32);
-
+    // Clone a `tx` handle for the second f
     let tx2 = tx.clone();
 
+    // spawn 这里启动一个任务
+    // 里面的闭包就已经开始执行了
+    // manager的结束时机是：所有的 tx.send 都消费完毕
     let manager = tokio::spawn(async move {
         // Open a connection to the mini-redis address.
         let mut client = client::connect("127.0.0.1:6379").await.unwrap();
@@ -45,20 +50,24 @@ async fn main() {
         }
     });
 
-    // 生成两个任务，一个用于获取 key，一个用于设置 key
+    // Spawn two tasks, one setting a value and other querying for key that was
+    // set.
     let t1 = tokio::spawn(async move {
         let (resp_tx, resp_rx) = oneshot::channel();
         let cmd = Command::Get {
-            key: "hello".to_string(),
+            key: "foo".to_string(),
             resp: resp_tx,
         };
 
-        // 发送 GET 请求
-        tx.send(cmd).await.unwrap();
+        // Send the GET request
+        if tx.send(cmd).await.is_err() {
+            eprintln!("connection task shutdown");
+            return;
+        }
 
-        // 等待回复
+        // Await the response
         let res = resp_rx.await;
-        println!("GOT = {:?}", res);
+        println!("GOT (Get) = {:?}", res);
     });
 
     let t2 = tokio::spawn(async move {
@@ -69,15 +78,19 @@ async fn main() {
             resp: resp_tx,
         };
 
-        // 发送 SET 请求
-        tx2.send(cmd).await.unwrap();
+        // Send the SET request
+        if tx2.send(cmd).await.is_err() {
+            eprintln!("connection task shutdown");
+            return;
+        }
 
-        // 等待回复
+        // Await the response
         let res = resp_rx.await;
-        println!("GOT = {:?}", res);
+        println!("GOT (Set) = {:?}", res);
     });
 
-    t1.await.unwrap();
+    // 这三句awwait 是为了保证main函数不提前退出
     t2.await.unwrap();
+    t1.await.unwrap();
     manager.await.unwrap();
 }
