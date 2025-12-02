@@ -1,21 +1,19 @@
-use std::{collections::HashMap, sync::{Arc, Mutex}};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 use bytes::Bytes;
 use mini_redis::{Connection, Frame};
-use tokio::net::{
-    TcpListener, TcpStream
-};
-
+use tokio::net::{TcpListener, TcpStream};
 
 type Db = Arc<Mutex<HashMap<String, Bytes>>>;
 
 #[tokio::main]
-async fn main()  {
-
+async fn main() {
     let listner = TcpListener::bind("127.0.0.1:6379").await.unwrap();
 
     let db = Arc::new(Mutex::new(HashMap::<String, Bytes>::new()));
-
 
     loop {
         let (socket, _) = listner.accept().await.unwrap();
@@ -25,9 +23,7 @@ async fn main()  {
         tokio::spawn(async move {
             process(socket, db).await;
         });
-        
     }
-
 }
 
 async fn process_v1(socket: TcpStream) {
@@ -47,7 +43,6 @@ async fn process_v1(socket: TcpStream) {
 async fn process(socket: TcpStream, db: Db) {
     use mini_redis::Command::{self, Get, Set};
 
-
     let mut connection = Connection::new(socket);
 
     while let Some(frame) = connection.read_frame().await.unwrap() {
@@ -63,9 +58,12 @@ async fn process(socket: TcpStream, db: Db) {
             Get(cmd) => {
                 let key = cmd.key().to_string();
                 let db = db.lock().unwrap();
+
                 if let Some(value) = db.get(&key) {
+                    println!("server GET {} = {:?}", key, value);
                     Frame::Bulk(value.clone().into())
                 } else {
+                    println!("server GET {} = None", key);
                     Frame::Null
                 }
             }
