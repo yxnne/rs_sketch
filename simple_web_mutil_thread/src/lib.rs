@@ -1,5 +1,9 @@
-use std::{sync::{Arc, Mutex, mpsc}, thread};
-
+use std::{
+    sync::{Arc, Mutex, mpsc},
+    thread,
+};
+// std::sync::mpsc 通道在等待消息时会阻塞当前的线程
+// 如果需要不阻塞，可以使用 tokio::sync::mpsc::channel
 
 struct Worker {
     id: usize,
@@ -8,24 +12,25 @@ struct Worker {
 
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
-        let thread = thread::spawn(move || loop {
+        let thread = thread::spawn(move || {
+            loop {
+                let message = receiver.lock().unwrap().recv();
 
-            let message = receiver.lock().unwrap().recv();
-
-            match message {
-                Ok(job) => {
-                    println!("Worker {id} got a job; executing.");
-                    job();
-                }
-                Err(_) => {
-                    println!("Worker {id} got a job; shutting down.");
-                    break;
+                match message {
+                    Ok(job) => {
+                        println!("Worker {id} got a job; executing.");
+                        job();
+                    }
+                    Err(_) => {
+                        println!("Worker {id} got a job; shutting down.");
+                        break;
+                    }
                 }
             }
         });
-        Worker { 
-            id, 
-            thread: Some(thread) 
+        Worker {
+            id,
+            thread: Some(thread),
         }
     }
 }
@@ -43,16 +48,18 @@ impl ThreadPool {
     pub fn new(size: usize) -> ThreadPool {
         assert!(size > 0);
 
-        let (sender, receiver) = mpsc:: channel();
+        let (sender, receiver) = mpsc::channel();
         let receiver = Arc::new(Mutex::new(receiver));
         let mut workers = Vec::with_capacity(size);
         for id in 0..size {
             // threads.push(thread::spawn(f));
             workers.push(Worker::new(id, Arc::clone(&receiver)));
         }
-        ThreadPool { workers, sender: Some(sender) }
+        ThreadPool {
+            workers,
+            sender: Some(sender),
+        }
     }
-
 
     pub fn execute<F>(&self, f: F)
     where
@@ -64,11 +71,9 @@ impl ThreadPool {
     }
 }
 
-
 impl Drop for ThreadPool {
     fn drop(&mut self) {
         for worker in &mut self.workers {
-
             drop(self.sender.take());
 
             println!("Shutting down worker {}.", worker.id);
@@ -79,18 +84,20 @@ impl Drop for ThreadPool {
             }
         }
     }
-
 }
-
 
 // 测试代码
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+        mpsc,
+    };
     use std::thread::sleep;
     use std::time::Duration;
-    use std::sync::{mpsc, Arc, atomic::{AtomicUsize, Ordering}};
-    
+
     #[test]
     fn test_thread_pool() {
         let pool = ThreadPool::new(4);
@@ -100,9 +107,6 @@ mod tests {
             });
         }
         sleep(Duration::from_secs(1));
-
-
-
     }
 
     #[test]
@@ -142,7 +146,10 @@ mod tests {
                 loop {
                     let prev = max.load(Ordering::SeqCst);
                     if cur > prev {
-                        if max.compare_exchange(prev, cur, Ordering::SeqCst, Ordering::SeqCst).is_ok() {
+                        if max
+                            .compare_exchange(prev, cur, Ordering::SeqCst, Ordering::SeqCst)
+                            .is_ok()
+                        {
                             break;
                         }
                     } else {
@@ -155,7 +162,9 @@ mod tests {
             });
         }
         drop(tx);
-        for _ in 0..total { rx.recv().unwrap(); }
+        for _ in 0..total {
+            rx.recv().unwrap();
+        }
         assert_eq!(max.load(Ordering::SeqCst), size); // 关键断言：峰值等于线程数
     }
 
@@ -175,7 +184,9 @@ mod tests {
             }
         } // 关键：离开作用域触发 Drop，关闭 sender 并 join 所有工作线程
         drop(tx);
-        for _ in 0..size { rx.recv().unwrap(); } // 关键行：若未等待完成，此处会阻塞
+        for _ in 0..size {
+            rx.recv().unwrap();
+        } // 关键行：若未等待完成，此处会阻塞
     }
 
     #[test]
@@ -194,11 +205,9 @@ mod tests {
             });
         }
         drop(tx);
-        for _ in 0..total { rx.recv().unwrap(); }
+        for _ in 0..total {
+            rx.recv().unwrap();
+        }
         assert_eq!(count.load(Ordering::Relaxed), total); // 关键断言：完成数匹配任务数
     }
-
-
-
-  
 }
