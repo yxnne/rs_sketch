@@ -1,0 +1,23 @@
+{
+  "repos": [
+    { "name": "rs_sketch", "stars": 0, "forks": 0, "issuesOpen": 0, "prsOpen": 0, "updatedAt": "2025-11-30" },
+    { "name": "tmpl-nest-react-2025", "stars": 0, "forks": 0, "issuesOpen": 0, "prsOpen": 0, "updatedAt": "2025-11-12" },
+    { "name": "rcli", "stars": 0, "forks": 0, "issuesOpen": 0, "prsOpen": 0, "updatedAt": "2025-11-07" },
+    { "name": "rs_start", "stars": 0, "forks": 0, "issuesOpen": 0, "prsOpen": 0, "updatedAt": "2025-09-29" },
+    { "name": "leaflet-editor", "stars": 0, "forks": 0, "issuesOpen": 0, "prsOpen": 0, "updatedAt": "2025-07-03" },
+    { "name": "university-class-web3", "stars": 0, "forks": 0, "issuesOpen": 0, "prsOpen": 0, "updatedAt": "2025-03-29" },
+    { "name": "uni-web3", "stars": 0, "forks": 0, "issuesOpen": 0, "prsOpen": 0, "updatedAt": "2025-03-29" },
+    { "name": "testing-astro-4068", "stars": 0, "forks": 0, "issuesOpen": 0, "prsOpen": 0, "updatedAt": "2025-03-07" },
+    { "name": "kel_temp", "stars": 0, "forks": 0, "issuesOpen": 0, "prsOpen": 0, "updatedAt": "2024-06-12" },
+    { "name": "WebFundamental", "stars": 0, "forks": 0, "issuesOpen": 0, "prsOpen": 2, "updatedAt": "2020-07-30" }
+  ],
+  "activity": [
+    { "month": "2025-11", "commits": 3 },
+    { "month": "2025-09", "commits": 1 },
+    { "month": "2025-07", "commits": 1 },
+    { "month": "2025-03", "commits": 3 },
+    { "month": "2024-06", "commits": 1 },
+    { "month": "2023-01", "commits": 1 }
+  ],
+  "languages": []
+}

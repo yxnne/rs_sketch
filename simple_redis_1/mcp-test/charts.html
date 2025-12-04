@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>班级成绩与性别比例</title>
+<link rel="preconnect" href="https://unpkg.com">
+<script src="https://unpkg.com/@antv/g2plot@2.4.25/dist/g2plot.min.js"></script>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,"Microsoft Yahei",sans-serif;margin:0;padding:24px;background:#fff;color:#1f1f1f}
+.grid{display:grid;grid-template-columns:1fr 1fr;grid-gap:24px}
+.card{border:1px solid #e5e5e5;border-radius:8px;padding:16px}
+.title{font-size:18px;font-weight:600;margin-bottom:12px}
+#scores,#gender{width:100%;height:400px}
+</style>
+</head>
+<body>
+<div class="grid">
+  <div class="card">
+    <div class="title">语文与数学成绩对比</div>
+    <div id="scores"></div>
+  </div>
+  <div class="card">
+    <div class="title">男女比例对比</div>
+    <div id="gender"></div>
+  </div>
+  <div class="card" style="grid-column:1/-1">
+    <div class="title">语文与数学平均分趋势</div>
+    <div id="trend"></div>
+  </div>
+</div>
+<script>
+const students=[
+  {name:'Alice',gender:'女',chinese:86,math:92},
+  {name:'Bob',gender:'男',chinese:78,math:85},
+  {name:'Carol',gender:'女',chinese:91,math:88},
+  {name:'David',gender:'男',chinese:67,math:74},
+  {name:'Eve',gender:'女',chinese:88,math:95},
+  {name:'Frank',gender:'男',chinese:72,math:69},
+  {name:'Grace',gender:'女',chinese:94,math:90},
+  {name:'Henry',gender:'男',chinese:80,math:82},
+  {name:'Ivy',gender:'女',chinese:85,math:87},
+  {name:'Jack',gender:'男',chinese:76,math:79},
+  {name:'Kate',gender:'女',chinese:90,math:93},
+  {name:'Leo',gender:'男',chinese:69,math:71}
+];
+const scoreData=[];
+students.forEach(s=>{
+  scoreData.push({name:s.name,subject:'语文',score:s.chinese});
+  scoreData.push({name:s.name,subject:'数学',score:s.math});
+});
+const genderMap={};
+students.forEach(s=>{genderMap[s.gender]=(genderMap[s.gender]||0)+1});
+const genderData=Object.keys(genderMap).map(k=>({type:k,value:genderMap[k]}));
+const avgChinese=students.reduce((a,b)=>a+b.chinese,0)/students.length;
+const avgMath=students.reduce((a,b)=>a+b.math,0)/students.length;
+const trendData=[
+  {time:'语文',value:Math.round(avgChinese*10)/10,group:'平均分'},
+  {time:'数学',value:Math.round(avgMath*10)/10,group:'平均分'}
+];
+const { Column, Pie, Line }=G2Plot;
+const scoresPlot=new Column('scores',{
+  data:scoreData,
+  xField:'name',
+  yField:'score',
+  seriesField:'subject',
+  isGroup:true,
+  label:{position:'top'},
+  color:['#5B8FF9','#5AD8A6'],
+  xAxis:{title:{text:'学生'}},
+  yAxis:{title:{text:'分数'}},
+});
+scoresPlot.render();
+const genderPlot=new Pie('gender',{
+  data:genderData,
+  angleField:'value',
+  colorField:'type',
+  radius:0.9,
+  label:{type:'outer',content:'{name} {percentage}'},
+  legend:true,
+  color:['#5B8FF9','#F4664A'],
+});
+genderPlot.render();
+const trendPlot=new Line('trend',{
+  data:trendData,
+  xField:'time',
+  yField:'value',
+  seriesField:'group',
+  color:['#5AD8A6'],
+  xAxis:{title:{text:'科目'}},
+  yAxis:{title:{text:'平均分'}},
+  point:{size:5,shape:'circle'},
+});
+trendPlot.render();
+</script>
+</body>
+</html>
